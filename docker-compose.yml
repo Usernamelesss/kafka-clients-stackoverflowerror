@@ -1,0 +1,37 @@
+version: '3'
+services:
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - 9093:9093
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LISTENERS=INSIDE_LISTENER://kafka:9092,OUTSIDE_LISTENER://0.0.0.0:9093
+      - KAFKA_ADVERTISED_LISTENERS=INSIDE_LISTENER://kafka:9092,OUTSIDE_LISTENER://localhost:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INSIDE_LISTENER:PLAINTEXT,OUTSIDE_LISTENER:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INSIDE_LISTENER
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+      JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+    depends_on:
+      - kafka
