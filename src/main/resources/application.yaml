@@ -7,5 +7,4 @@ spring:
     bootstrap-servers: localhost:9093
     consumer:
       group-id: demo.topic-1
-    template:
-      default-topic: topic-1
+

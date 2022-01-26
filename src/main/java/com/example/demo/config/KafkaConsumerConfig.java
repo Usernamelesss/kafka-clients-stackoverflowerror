@@ -32,6 +32,7 @@ public class KafkaConsumerConfig {
     private String bootstrapAddress;
     @Value(value = "${spring.kafka.consumer.group-id}")
     private String groupId;
+    private static final String topic = "topic-1";
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
@@ -48,12 +49,14 @@ public class KafkaConsumerConfig {
         props.put(
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class);
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
     public ConcurrentMessageListenerContainer<String, String> kafkaContainer() {
-        ContainerProperties containerProperties = new ContainerProperties(groupId);
+        ContainerProperties containerProperties = new ContainerProperties(topic);
         containerProperties.setAckMode(ContainerProperties.AckMode.RECORD);
         containerProperties.setAckOnError(false);
         containerProperties.setSyncCommits(false);
