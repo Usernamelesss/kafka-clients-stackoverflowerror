@@ -5,10 +5,7 @@ import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 
 
 @Service
@@ -41,7 +37,7 @@ public class Producer {
         waitForTopic();
         int recordsToBeProduced = 500000;
         LOGGER.info("Topic is ready, start producing {} messages", recordsToBeProduced);
-        for (int i = 0; i <= recordsToBeProduced; i++) {
+        for (int i = 0; i < recordsToBeProduced; i++) {
             try {
                 producer.send(topic, String.valueOf(i)).get();
 
