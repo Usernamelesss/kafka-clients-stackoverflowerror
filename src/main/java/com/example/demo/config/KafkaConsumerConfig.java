@@ -6,8 +6,8 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
@@ -25,10 +25,13 @@ import java.util.Map;
 
 @EnableKafka
 @Configuration
+@Profile("consume")
 public class KafkaConsumerConfig {
 
     @Value(value = "${spring.kafka.bootstrap-servers}")
     private String bootstrapAddress;
+    @Value(value = "${spring.kafka.consumer.group-id}")
+    private String groupId;
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
@@ -38,7 +41,7 @@ public class KafkaConsumerConfig {
                 bootstrapAddress);
         props.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
-                "consumer.topic-1");
+                groupId);
         props.put(
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class);
@@ -48,25 +51,17 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
-//    @Bean
-//    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
-//        ConcurrentKafkaListenerContainerFactory<String, String> factory =
-//                new ConcurrentKafkaListenerContainerFactory<>();
-//        factory.setConsumerFactory(consumerFactory());
-//        return factory;
-//    }
-
     @Bean
     public ConcurrentMessageListenerContainer<String, String> kafkaContainer() {
-        ContainerProperties containerProperties = new ContainerProperties("consumer.topic-1");
+        ContainerProperties containerProperties = new ContainerProperties(groupId);
         containerProperties.setAckMode(ContainerProperties.AckMode.RECORD);
         containerProperties.setAckOnError(false);
         containerProperties.setSyncCommits(false);
         containerProperties.setLogContainerConfig(true);
-
-        RetryingMessageListenerAdapter<String, String> adapter = new RetryingMessageListenerAdapter<>(messageHandler(), getRetryTemplate());
+        RetryingMessageListenerAdapter<String, String> adapter = new RetryingMessageListenerAdapter<>(
+                messageHandler(),
+                getRetryTemplate());
         containerProperties.setMessageListener(adapter);
-
         ConcurrentMessageListenerContainer<String, String> container = new ConcurrentMessageListenerContainer<>(
                 consumerFactory(), containerProperties);
         container.setConcurrency(1);
@@ -83,18 +78,13 @@ public class KafkaConsumerConfig {
 
     private RetryTemplate getRetryTemplate() {
         RetryTemplate retryTemplate = new RetryTemplate();
-
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
         backOffPolicy.setMaxInterval(10);
         backOffPolicy.setMultiplier(2);
-
         retryTemplate.setBackOffPolicy(backOffPolicy);
-
         SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy();
         simpleRetryPolicy.setMaxAttempts(Integer.MAX_VALUE);
-
         retryTemplate.setRetryPolicy(simpleRetryPolicy);
-
         return retryTemplate;
     }
 }
