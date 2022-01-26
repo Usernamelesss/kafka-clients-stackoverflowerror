@@ -32,7 +32,8 @@ public class KafkaConsumerConfig {
     private String bootstrapAddress;
     @Value(value = "${spring.kafka.consumer.group-id}")
     private String groupId;
-    private static final String topic = "topic-1";
+    @Value(value = "${spring.kafka.template.default-topic}")
+    private String topic;
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
